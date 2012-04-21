@@ -11,6 +11,7 @@ unsigned squareLength(const V& vector) {
 
 enum class Asset {
         Player,
+        Enemy,
         Grass,
         Wood,
 };
@@ -20,9 +21,13 @@ struct Cell {
         Asset asset;
 };
 
-struct Player {
+struct Character {
         sf::Vector2i position;
+        Asset asset;
 };
+
+struct Player: Character { Player() { asset = Asset::Player; } };
+struct Enemy: Character { Enemy() { asset = Asset::Enemy; } };
 
 class Level {
 
@@ -33,12 +38,13 @@ class Level {
         ~Level() {
                 for (const Cell* cell: map)
                         delete cell;
+                for (const Enemy* enemy: enemies)
+                        delete enemy;
         }
 
-        typedef std::set<Cell*> Map;
-        Map map;
-
+        std::set<Cell*> map;
         sf::Vector2i start;
+        std::set<Enemy*> enemies;
 
 };
 
@@ -55,6 +61,17 @@ Level::Level(std::string path) {
                 int x, y;
                 file >> x >> y;
                 start = sf::Vector2i(x, y);
+        }
+
+        // Read amount of enemies
+        int enemyCount;
+        file >> enemyCount;
+
+        // Read enemy position
+        while (enemyCount --> 0) {
+                Enemy* enemy = new Enemy;
+                file >> enemy->position.x >> enemy->position.y;
+                enemies.insert(enemy);
         }
 
         // Read cells
@@ -106,6 +123,8 @@ class Assets {
                         return "grass";
                         case Asset::Wood:
                         return "wood";
+                        case Asset::Enemy:
+                        return "enemy";
                 }
         }
 
@@ -163,6 +182,8 @@ int main() {
 
                         else if (event.type == sf::Event::KeyPressed) {
 
+                                sf::Vector2i oldPos = player.position;
+
                                 switch (event.key.code) {
 
                                         case sf::Keyboard::Up:
@@ -182,8 +203,26 @@ int main() {
                                         break;
 
                                         default:
-                                        break;
+                                        continue;
 
+                                }
+
+                                for (Enemy* enemy: level.enemies) {
+                                        if (player.position == enemy->position) {
+                                                player.position = oldPos;
+                                                std::cout << "Touched enemy" << std::endl;
+                                                // TODO HitPoints
+                                        }
+                                }
+
+                                if (player.position != oldPos) {
+                                        for (Enemy* enemy: level.enemies) {
+                                                const sf::Vector2i relPos(enemy->position - player.position);
+                                                if (std::abs(relPos.x) > std::abs(relPos.y))
+                                                        enemy->position.x += relPos.x < 0 ? +1 : -1;
+                                                else if (relPos.x and relPos.y)
+                                                        enemy->position.y += relPos.y < 0 ? +1 : -1;
+                                        }
                                 }
 
                         }
@@ -192,10 +231,23 @@ int main() {
 
                 win.clear(sf::Color(50, 50, 50));
 
-                for (auto& cell: level.map) {
+                // Draw map
+                for (const Cell* cell: level.map) {
                         const sf::Vector2i relPos(cell->position - player.position);
                         if (squareLength(relPos) < maxRenderRadiusSq) {
                                 sf::Sprite sprite(Assets::getTexture(cell->asset));
+                                sprite.move(viewSize.x / 2 * cellSize, viewSize.y / 2 * cellSize);
+                                sprite.move(relPos.x * cellSize, relPos.y * cellSize);
+                                win.draw(sprite);
+                        }
+
+                }
+
+                // Draw enemies
+                for (const Enemy* enemy: level.enemies) {
+                        const sf::Vector2i relPos(enemy->position - player.position);
+                        if (squareLength(relPos) < maxRenderRadiusSq) {
+                                sf::Sprite sprite(Assets::getTexture(enemy->asset));
                                 sprite.move(viewSize.x / 2 * cellSize, viewSize.y / 2 * cellSize);
                                 sprite.move(relPos.x * cellSize, relPos.y * cellSize);
                                 win.draw(sprite);
