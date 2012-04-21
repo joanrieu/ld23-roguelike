@@ -47,21 +47,25 @@ Level::Level(std::string path) {
         std::ifstream file(path);
         assert(file);
 
+        // Read level size
         int width, height;
         file >> width >> height;
 
-        {
+        { // Read player start position
                 int x, y;
                 file >> x >> y;
                 start = sf::Vector2i(x, y);
         }
 
+        // Read cells
         for (int y = 0; y < height; ++y) {
                 for (int x = 0; x < width; ++x) {
 
+                        // Position is automatic
                         Cell* cell = new Cell;
                         cell->position = sf::Vector2i(x, y);
 
+                        // A character represents a type of cell
                         char type = 0;
                         file >> type;
 
@@ -75,6 +79,8 @@ Level::Level(std::string path) {
                                 cell->asset = Asset::Grass;
                                 break;
 
+                                // Any unknown character results in empty cell
+                                // (except blanks which are skipped)
                                 default:
                                 delete cell;
                                 continue;
