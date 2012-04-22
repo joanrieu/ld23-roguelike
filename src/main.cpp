@@ -258,7 +258,7 @@ int main() {
 
                 { // Draw Player
                         sf::Sprite sprite(Assets::getTexture(Asset::Player));
-                        sprite.move((viewSize.x/2) * cellSize, (viewSize.y/2) * cellSize);
+                        sprite.move((viewSize.x / 2) * cellSize, (viewSize.y / 2) * cellSize);
                         win.draw(sprite);
                 }
 
