@@ -51,7 +51,7 @@ class Level {
 Level::Level(std::string path) {
 
         std::ifstream file;
-	file.open(path.c_str(), std::ifstream::in);
+        file.open(path.c_str(), std::ifstream::in);
         assert(file);
 
         // Read level size
